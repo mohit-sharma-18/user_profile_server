@@ -8,6 +8,7 @@ const session = require('express-session')
 const pgSession = require('connect-pg-simple')(session);
 const pool = require('./db.js')
 require('dotenv').config()
+const cookie = require('cookie-parser')
 const sendErrorResponse = require('./apis/toastResponse.js')
 
 
@@ -18,6 +19,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
 }))
+app.use(cookie())
 app.use('/signup', signUp)
 
 app.use(
@@ -39,15 +41,6 @@ app.use(
     })
 );
 
-app.post('/set-cookie', (req, res) => {
-    res.cookie('testCookie', 'helloWorld', {
-        httpOnly: true,   // Prevents JavaScript access
-        secure: true,     // Ensures cookies are sent over HTTPS
-        sameSite: 'None', // Allows cross-origin requests
-        maxAge: 3600000   // 1 hour expiration
-    });
-    res.send('Cookie set!');
-});
 
 app.post('/login', (req, res) => {
     const { email, password } = req.body
@@ -66,12 +59,12 @@ app.post('/login', (req, res) => {
                 return sendErrorResponse(res, "Error", "Session Not Initilaize")
             }
             req.session.user = { email }
-            
-            res.cookie('sessionId', req.sessionID, {
+
+            res.cookie('userEmail', email, {
+                secure: process.env.node_env === 'production',
                 httpOnly: true,
-                secure: true,
-                sameSite: 'None',
                 maxAge: 3600000,
+                sameSite: process.env.node_env === 'production' ? 'none' : 'lax'
             });
             console.log('email', email, 'req.session.user', req.session.user);
             return res.json({ "resPath": "/dashboard", "auth": true })
@@ -85,8 +78,8 @@ app.post('/login', (req, res) => {
 
 app.get('/dashboard', (req, res) => {
     console.log('req.session', req.session);
-
-    if (!req.session.user) {
+    const userEmail = req.cookies.userEmail
+    if (!userEmail) {
         return sendErrorResponse(res, 'Error', "Login First")
     }
     const { email } = req.session.user;
