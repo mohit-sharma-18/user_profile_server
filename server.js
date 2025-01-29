@@ -82,9 +82,9 @@ app.get('/dashboard', (req, res) => {
     if (!userEmail) {
         return sendErrorResponse(res, 'Error', "Login First")
     }
-    const { email } = req.session.user;
+    // const { email } = req.session.user;
 
-    db.query(`select usertable from admindata.users_summary where upper(email)= upper($1)`, [email], (err, result) => {
+    db.query(`select usertable from admindata.users_summary where upper(email)= upper($1)`, [userEmail], (err, result) => {
         console.log('result', result.rows);
         if (err) {
             console.log('error while fetching data' + err);
@@ -106,8 +106,8 @@ app.get('/dashboard', (req, res) => {
 
 app.post('/addData', (req, res) => {
     const { userData, userValue } = req.body
-    const { email } = req.session.user
-    db.query(`select usertable from admindata.users_summary where upper(email)= upper($1)`, [email], (err, result) => {
+    const userEmail = req.cookies.userEmail
+    db.query(`select usertable from admindata.users_summary where upper(email)= upper($1)`, [userEmail], (err, result) => {
         console.log('result', result.rows);
         if (err) {
             console.log('error while fetching data' + err);
@@ -130,8 +130,8 @@ app.post('/addData', (req, res) => {
 
 app.post('/deleteData', (req, res) => {
     const { userData, userValue } = req.body
-    const { email } = req.session.user
-    db.query(`select usertable from admindata.users_summary where upper(email)= upper($1)`, [email], (err, result) => {
+    const userEmail = req.cookies.userEmail
+    db.query(`select usertable from admindata.users_summary where upper(email)= upper($1)`, [userEmail], (err, result) => {
         console.log('result', result.rows);
         if (err) {
             console.log('error while fetching data' + err);
