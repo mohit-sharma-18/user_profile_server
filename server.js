@@ -31,15 +31,23 @@ app.use(
         resave: false,
         saveUninitialized: false,
         cookie: {
-            secure: true,
+            secure: process.env.node_env === 'production',
             httpOnly: true,
             maxAge: 3600000,
-            sameSite: 'none'
+            sameSite: process.env.node_env === 'production' ? 'none' : 'lax'
         }
     })
 );
 
-
+app.post('/set-cookie', (req, res) => {
+    res.cookie('testCookie', 'helloWorld', {
+        httpOnly: true,   // Prevents JavaScript access
+        secure: true,     // Ensures cookies are sent over HTTPS
+        sameSite: 'None', // Allows cross-origin requests
+        maxAge: 3600000   // 1 hour expiration
+    });
+    res.send('Cookie set!');
+});
 
 app.post('/login', (req, res) => {
     const { email, password } = req.body
@@ -58,6 +66,13 @@ app.post('/login', (req, res) => {
                 return sendErrorResponse(res, "Error", "Session Not Initilaize")
             }
             req.session.user = { email }
+            
+            res.cookie('sessionId', req.sessionID, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None',
+                maxAge: 3600000,
+            });
             console.log('email', email, 'req.session.user', req.session.user);
             return res.json({ "resPath": "/dashboard", "auth": true })
         }
