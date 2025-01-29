@@ -12,7 +12,6 @@ const cookie = require('cookie-parser')
 const sendErrorResponse = require('./apis/toastResponse.js')
 
 
-
 app.use(express.json())
 app.use(cors({
     origin: process.env.db_frontend,
