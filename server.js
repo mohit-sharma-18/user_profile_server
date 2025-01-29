@@ -113,15 +113,22 @@ app.post('/addData', (req, res) => {
             sendErrorResponse(res, 'Error', "Error while fetching data!")
         }
         const table = result.rows[0].usertable
-        db.query(`update ${table}
+        db.query(`
+            update ${table}
                  set data = jsonb_set(data, '{${userData}}', '"${userValue}"') 
-                 where id=1`, [], (err, result) => {
+                 where id=1 and not (data ? $1)
+                 returning id`, [userData], (err, result) => {
             if (err) {
                 console.log('error while insert data' + err);
                 sendErrorResponse(res, 'Error', "Error while insert data!")
             }
+            else if (result.rowCount > 0) {
+                return sendErrorResponse(res, 'Success', "Data added successfully")
+            }
+            else {
+                return sendErrorResponse(res, 'Warning', "Data already exists");
+            }
 
-            return sendErrorResponse(res, 'Success', "Data added successfully")
         })
     })
 
@@ -139,12 +146,20 @@ app.post('/deleteData', (req, res) => {
         const table = result.rows[0].usertable
         db.query(`update ${table}
                  set data = data -$1
-                 where id=1`, [userData], (err, result) => {
+                 where id=1 and data ? $1
+                 returning id,data`, [userData], (err, result) => {
+                    console.log('www', result);
+                    
             if (err) {
                 console.log('error while insert data' + err);
                 sendErrorResponse(res, 'Error', "Error while insert data!")
             }
-            return sendErrorResponse(res, 'Success', "Data deleted successfully")
+            else if (result.rowCount > 0) {
+                return sendErrorResponse(res, 'Success', "Data deleted successfully")
+            }
+            else {
+                return sendErrorResponse(res, 'Warning', "No matching record found!");
+            }
         })
     })
 
